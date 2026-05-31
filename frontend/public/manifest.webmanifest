@@ -1,0 +1,18 @@
+{
+  "name": "Free AI Forever",
+  "short_name": "Free AI",
+  "description": "A free, local AI chat app that runs on your own computer.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2680EB",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

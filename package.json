@@ -1,0 +1,75 @@
+{
+  "name": "free-ai-forever",
+  "productName": "Free AI Forever",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A free, local AI chat app that runs on your own computer, powered by Ollama.",
+  "author": "Matthew Bailie",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install",
+    "postinstall": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
+    "launch": "node launch.mjs",
+    "icon": "node scripts/make-icon.mjs",
+    "rebuild": "electron-rebuild -m backend -w better-sqlite3 -f",
+    "electron": "electron .",
+    "pack": "npm run build && npm run rebuild && electron-builder --dir",
+    "dist": "npm run build && npm run rebuild && electron-builder",
+    "dist:mac": "npm run build && npm run rebuild && electron-builder --mac",
+    "dist:win": "npm run build && npm run rebuild && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.matthewbailie.freeaiforever",
+    "productName": "Free AI Forever",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      { "from": "backend/dist", "to": "backend/dist" },
+      { "from": "backend/node_modules", "to": "backend/node_modules" },
+      { "from": "backend/package.json", "to": "backend/package.json" },
+      { "from": "frontend/dist", "to": "frontend/dist" }
+    ],
+    "asar": true,
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [ "dmg" ],
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": [ "nsis" ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [ "AppImage" ],
+      "category": "Utility",
+      "icon": "build/icon.png"
+    }
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
+    "@resvg/resvg-js": "^2.6.2",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  }
+}
