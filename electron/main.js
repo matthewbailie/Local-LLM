@@ -11,6 +11,9 @@
 // it is missing.
 
 const { app, BrowserWindow, dialog, shell, Menu } = require("electron");
+// Note: Ollama detection and first-model setup are handled by the in-app
+// onboarding screen (so they work the same in the packaged app and in dev),
+// so the shell no longer shows its own Ollama dialog.
 const { spawn } = require("node:child_process");
 const http = require("node:http");
 const path = require("node:path");
@@ -80,21 +83,6 @@ function waitForServer(retries = 150) {
   });
 }
 
-// Best-effort check that Ollama is reachable on its default port.
-function ollamaReachable() {
-  return new Promise((resolve) => {
-    const req = http.get(`${OLLAMA_URL}/api/tags`, (res) => {
-      res.resume();
-      resolve(res.statusCode === 200);
-    });
-    req.on("error", () => resolve(false));
-    req.setTimeout(1200, () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
-}
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -125,26 +113,6 @@ function createWindow() {
   });
 }
 
-async function checkOllama() {
-  if (await ollamaReachable()) return;
-  const result = await dialog.showMessageBox(mainWindow ?? undefined, {
-    type: "warning",
-    buttons: ["Get Ollama", "Continue anyway"],
-    defaultId: 0,
-    cancelId: 1,
-    title: "Ollama is required",
-    message: "Ollama isn't running yet",
-    detail:
-      "Free AI Forever runs AI models on your computer using Ollama. It looks " +
-      "like Ollama isn't installed or started.\n\n" +
-      "Install Ollama (free), open it once so it starts running, then come back " +
-      "here and download a model from \"Manage LLMs\".",
-  });
-  if (result.response === 0) {
-    await shell.openExternal("https://ollama.com/download");
-  }
-}
-
 // Single-instance: focus the existing window instead of opening a second app.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -169,7 +137,6 @@ if (!app.requestSingleInstanceLock()) {
       return;
     }
     createWindow();
-    checkOllama();
   });
 
   app.on("activate", () => {

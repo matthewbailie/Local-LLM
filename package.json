@@ -16,11 +16,12 @@
     "launch": "node launch.mjs",
     "icon": "node scripts/make-icon.mjs",
     "rebuild": "electron-rebuild -m backend -w better-sqlite3 -f",
+    "rebuild:node": "npm rebuild better-sqlite3 --prefix backend",
     "electron": "electron .",
-    "pack": "npm run build && npm run rebuild && electron-builder --dir",
-    "dist": "npm run build && npm run rebuild && electron-builder",
-    "dist:mac": "npm run build && npm run rebuild && electron-builder --mac",
-    "dist:win": "npm run build && npm run rebuild && electron-builder --win"
+    "pack": "npm run build && npm run rebuild && electron-builder --dir && npm run rebuild:node",
+    "dist": "npm run build && npm run rebuild && electron-builder && npm run rebuild:node",
+    "dist:mac": "npm run build && npm run rebuild && electron-builder --mac && npm run rebuild:node",
+    "dist:win": "npm run build && npm run rebuild && electron-builder --win && npm run rebuild:node"
   },
   "build": {
     "appId": "com.matthewbailie.freeaiforever",

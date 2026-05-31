@@ -25,7 +25,7 @@ Then:
 2. **Install Free AI Forever:**
    - **Mac:** open the `.dmg` and drag **Free AI Forever** into Applications. The first time you open it, macOS may say it's from an unidentified developer - right-click the app, choose **Open**, then **Open** again (one time only). *(The app is not code-signed yet, so this is expected.)*
    - **Windows:** run the `.exe`. If you see "Windows protected your PC", click **More info** then **Run anyway** (one time only).
-3. **Open the app** and use **Manage LLMs** to download your first model. The app recommends models that fit your computer's memory.
+3. **Open the app.** The first time, it walks you through the rest: if Ollama isn't running it shows a Download Ollama button and waits for it, then it offers a recommended first model (one that fits your computer's memory) to download with one click. After that you're chatting.
 
 That's it - no Node.js, no terminal, no build step. The app bundles its own runtime.
 

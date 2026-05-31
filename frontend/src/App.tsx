@@ -7,6 +7,7 @@ import SettingsModal from "./components/SettingsModal";
 import ApprovalCard from "./components/ApprovalCard";
 import LlmStatus from "./components/LlmStatus";
 import InstructionsModal from "./components/InstructionsModal";
+import Onboarding from "./components/Onboarding";
 import { api } from "./lib/api";
 import type { ApprovalAction, AppConfig, ChatSummary, LocalModel, Message as Msg, PreparedUpload, Source } from "./types";
 
@@ -48,6 +49,9 @@ export default function App() {
   const [llmLoaded, setLlmLoaded] = useState(false);
   const [llmLoading, setLlmLoading] = useState(false);
   const [queued, setQueued] = useState<QueuedMessage[]>([]);
+  // First-run onboarding gate: "checking" until we know the state, then either
+  // prompt to install Ollama, prompt to download a first model, or "ready".
+  const [onboarding, setOnboarding] = useState<"checking" | "no-ollama" | "no-model" | "ready">("checking");
 
   const abortRef = useRef<AbortController | null>(null);
   const pendingRef = useRef<Pending | null>(null);
@@ -77,9 +81,21 @@ export default function App() {
     }
   }, []);
 
+  // Decide the onboarding state: if Ollama is unreachable -> "no-ollama";
+  // if it's up but no models are installed -> "no-model"; otherwise "ready".
+  const checkReadiness = useCallback(async () => {
+    try {
+      const { models } = await api.listModels();
+      setOnboarding(models.length === 0 ? "no-model" : "ready");
+    } catch {
+      setOnboarding("no-ollama");
+    }
+  }, []);
+
   useEffect(() => {
     refreshChats();
     refreshModels();
+    checkReadiness();
     api
       .getConfig()
       .then((c) => {
@@ -87,7 +103,26 @@ export default function App() {
         setActiveModel((cur) => cur || c.defaultModel);
       })
       .catch(() => undefined);
-  }, [refreshChats, refreshModels]);
+  }, [refreshChats, refreshModels, checkReadiness]);
+
+  // While Ollama is missing, poll so the screen advances on its own once the
+  // user installs and starts it.
+  useEffect(() => {
+    if (onboarding !== "no-ollama") return;
+    const id = window.setInterval(checkReadiness, 4000);
+    return () => window.clearInterval(id);
+  }, [onboarding, checkReadiness]);
+
+  // After a model is installed via onboarding, refresh the list, select it, and
+  // dismiss the gate.
+  const finishOnboarding = useCallback(
+    async (tag?: string) => {
+      await refreshModels();
+      if (tag) setActiveModel(tag);
+      setOnboarding("ready");
+    },
+    [refreshModels],
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -587,6 +622,20 @@ export default function App() {
       {showLibrary && config && <ModelLibrary reservedRamGb={config.machine.reservedRamGb} onClose={() => setShowLibrary(false)} onModelsChanged={refreshModels} />}
       {showSettings && config && <SettingsModal config={config} onClose={() => setShowSettings(false)} onSaved={(c) => setConfig(c)} />}
       {showInstructions && <InstructionsModal onClose={() => setShowInstructions(false)} />}
+
+      {(onboarding === "no-ollama" || onboarding === "no-model") && (
+        <Onboarding
+          mode={onboarding}
+          reservedRamGb={config?.machine.reservedRamGb ?? 0}
+          onRecheck={checkReadiness}
+          onInstalled={finishOnboarding}
+          onOpenLibrary={() => {
+            setOnboarding("ready");
+            setShowLibrary(true);
+          }}
+          onSkip={() => setOnboarding("ready")}
+        />
+      )}
     </div>
   );
 }
